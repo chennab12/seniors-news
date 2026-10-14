@@ -28,7 +28,7 @@ def show(title, stages):
     st.html(
         f"<style>{STYLE}</style>"
         f'<div class="cue-wrap" role="img" aria-label="{escape(title)}: {escape(" then ".join(stages))}">'
-        f'<p class="cue-title">{escape(title)}: remember in 4 steps</p><div class="cue-steps">{cards}</div></div>'
+        f'<p class="cue-title">🧠 {escape(title)}</p><div class="cue-steps">{cards}</div></div>'
     )
 
 
@@ -39,4 +39,36 @@ def large_text(size_px):
         f"html, body, [data-testid='stAppViewContainer'] p, [data-testid='stAppViewContainer'] li, "
         f"[data-testid='stSidebar'] p, label, button {{font-size:{size_px}px !important; line-height:1.6}}"
         "</style>"
+    )
+
+
+def read_aloud(text, lang, labels):
+    """🔊 / ⏹️ buttons that speak the text with the phone or computer's own voice (no API key)."""
+    import json
+
+    import streamlit.components.v1 as components
+
+    voice = "te-IN" if lang == "te" else "en-IN"
+    speak, stop = labels
+    # Runs in a small iframe: st.html strips scripts and click handlers.
+    components.html(
+        f"""
+<style>
+button{{font:600 18px system-ui,Arial,sans-serif;padding:10px 18px;margin-right:8px;border-radius:10px;
+  border:2px solid #1f6f9f;background:#1f6f9f;color:#fff;cursor:pointer}}
+button.stop{{background:#fff;color:#1f6f9f}}
+</style>
+<button onclick='go()'>{escape(speak)}</button><button class="stop" onclick='speechSynthesis.cancel()'>{escape(stop)}</button>
+<script>
+function go(){{
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance({json.dumps(text)});
+  u.lang = {json.dumps(voice)};
+  u.rate = 0.85;
+  const v = speechSynthesis.getVoices().find(v => v.lang.replace('_','-').startsWith({json.dumps(voice[:2])}));
+  if (v) u.voice = v;
+  speechSynthesis.speak(u);
+}}
+</script>""",
+        height=62,
     )

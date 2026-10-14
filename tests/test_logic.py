@@ -1,7 +1,12 @@
 import pytest
 
 from calculations import fd_maturity, inr, interest_payout, life_certificate_window
-from content import FEEDS, HELPLINES, SOURCES, TOPICS
+from datetime import date
+
+from content import FEEDS, HELPLINES, SOURCES, TIP_ICONS, TOPICS
+from extras_content import CHECKUPS, HOSPITALS, IMPORTANT_DATES
+from features import aqi_level, build_ics, emergency_card_html, heat_level, scam_check, search_tips, tip_of_the_day, upcoming_dates
+from weather import parse
 from i18n import FEEDS_TE, HELPLINES_TE, TOPICS_TE, UI
 from news import parse_feed, summarize
 
@@ -70,3 +75,70 @@ def test_telugu_matches_english():
     assert set(FEEDS_TE) == set(FEEDS)
     assert set(UI["te"]) - {"windows"} == set(UI["en"])
     assert set(UI["te"]["windows"]) == {life_certificate_window(85), life_certificate_window(70)}
+
+
+def test_tip_icons_match_tips():
+    for topic in TOPICS:
+        assert len(TIP_ICONS[topic["title"]]) == len(topic["tips"])
+    for row in CHECKUPS + HOSPITALS:
+        assert all(row)
+
+
+def test_every_scam_example_is_red_in_both_languages():
+    for lang in ("en", "te"):
+        for text in UI[lang]["scam_example_texts"]:
+            assert scam_check(text)[0] == "red", text
+
+
+def test_harmless_message_is_green():
+    assert scam_check("Hi amma, I will come for lunch at 1 pm.") == ("green", [])
+
+
+def test_scam_reasons_strongest_first():
+    level, reasons = scam_check("Urgent: share your OTP")
+    assert level == "red"
+    assert "OTP" in reasons[0][0]
+
+
+def test_tip_of_the_day_changes_daily():
+    first = tip_of_the_day(TOPICS, date(2026, 10, 14))
+    assert first == tip_of_the_day(TOPICS, date(2026, 10, 14))
+    assert first != tip_of_the_day(TOPICS, date(2026, 10, 15))
+
+
+def test_search_tips_english_and_telugu():
+    topic, tip = search_tips("how to give life certificate", TOPICS)[0]
+    assert "life certificate" in tip
+    te_topics = [{**t, **TOPICS_TE[t["title"]]} for t in TOPICS]
+    topic, tip = search_tips("లైఫ్ సర్టిఫికేట్", te_topics)[0]
+    assert "లైఫ్ సర్టిఫికేట్" in tip
+    assert search_tips("zzzz qqqq", TOPICS) == []
+
+
+def test_upcoming_dates_wrap_into_next_year():
+    items = upcoming_dates(date(2026, 12, 1))
+    assert len(items) == len(IMPORTANT_DATES)
+    assert items[0][0] == date(2027, 3, 1)
+    assert [d for d, *_ in items] == sorted(d for d, *_ in items)
+    assert upcoming_dates(date(2026, 11, 30))[0][0] == date(2026, 11, 30)
+
+
+def test_build_ics():
+    ics = build_ics([(date(2027, 4, 1), "Form 15H, bank; now")])
+    assert ics.count("BEGIN:VEVENT") == 1
+    assert "DTSTART;VALUE=DATE:20270401" in ics and "RRULE:FREQ=YEARLY" in ics
+    assert "SUMMARY:Form 15H\\, bank\\; now" in ics
+    assert ics.endswith("END:VCALENDAR\r\n")
+
+
+def test_emergency_card_escapes_and_skips_empty():
+    html = emergency_card_html("Card", [("Name", "<b>Ravi</b>"), ("Allergies", "")], "Call 108")
+    assert "&lt;b&gt;Ravi" in html and "Allergies" not in html
+
+
+def test_weather_levels_and_parse():
+    assert heat_level(41) == "danger" and heat_level(36) == "caution" and heat_level(30) == "ok"
+    assert [aqi_level(x) for x in (40, 90, 140, 200)] == ["good", "moderate", "sensitive", "unhealthy"]
+    forecast = {"current": {"temperature_2m": 30, "apparent_temperature": 33}, "daily": {"temperature_2m_max": [34], "temperature_2m_min": [22], "precipitation_probability_max": [None]}}
+    assert parse(forecast, None) == {"temp": 30, "feels_like": 33, "max": 34, "min": 22, "rain_chance": 0, "aqi": None}
+    assert parse(forecast, {"current": {"us_aqi": 80}})["aqi"] == 80

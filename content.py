@@ -17,6 +17,9 @@ SOURCES = {
     "Social Justice Ministry (Senior Citizens Act)": "https://socialjustice.gov.in/",
     "Hyderabad Metro": "https://www.ltmetro.com/",
     "DigiLocker": "https://www.digilocker.gov.in/",
+    "GHMC (property tax, complaints)": "https://www.ghmc.gov.in/",
+    "Hyderabad Water Board (HMWSSB)": "https://www.hyderabadwater.gov.in/",
+    "Jan Aushadhi (cheaper medicines)": "https://janaushadhi.gov.in/",
 }
 
 # Google News search feeds work without an API key and return the newest headlines for a topic.
@@ -180,4 +183,35 @@ TOPICS = [
         "links": ["Elder Line 14567"],
         "cue": ["Morning walk", "Meet friends", "Learn something", "Rest well"],
     },
+    {
+        "icon": "🧾",
+        "title": "Bills and city services",
+        "takeaway": "Pay electricity, water and property tax bills only through official apps, websites or counters.",
+        "feed": None,
+        "tips": [
+            "Pay the electricity bill on the TGSPDCL website or app, in the 'Bill payments' section of your bank or UPI app, or at a Meeseva or TG Online counter.",
+            "Pay water bills (HMWSSB) on the Hyderabad Water Board website or at its offices.",
+            "GHMC gives a rebate on property tax paid early in the year (the 'early bird' scheme, usually in April). Check the GHMC website for this year's dates.",
+            "An SMS saying 'your power will be cut tonight, call this number' is a scam. The power department does not send such messages from mobile numbers.",
+            "Keep the payment receipt or a screenshot until your next bill shows the payment.",
+            "For complaints: electricity 1912, GHMC 040-2111 1111, water board 155313.",
+        ],
+        "do": "Check the service number on your old bill before you pay.",
+        "dont": "Pay a bill through a link sent by SMS or WhatsApp.",
+        "links": ["GHMC (property tax, complaints)", "Hyderabad Water Board (HMWSSB)"],
+        "cue": ["Check bill number", "Use official app", "Keep receipt", "Ignore cut-off SMS"],
+    },
 ]
+
+# One icon per tip, in the same order as each topic's tips (shared by both languages).
+TIP_ICONS = {
+    "Today's news": ["⏰", "📲", "⚠️"],
+    "Health": ["🩸", "💧", "🦟", "🛁", "👓", "💊"],
+    "Money": ["🏦", "📮", "📝", "📜", "👨‍👩‍👧", "🛡️"],
+    "Safety and scams": ["🚫", "🔐", "📵", "☎️", "🚪", "👮"],
+    "Government benefits": ["🏥", "👴", "⚖️", "📂", "🏠"],
+    "Getting around Hyderabad": ["🚇", "🚌", "🚕", "🪪", "☀️"],
+    "Phone and digital help": ["🔠", "💸", "🔒", "📹", "🔄"],
+    "Active and happy living": ["🚶", "😄", "🧍", "🧩", "💬"],
+    "Bills and city services": ["⚡", "🚰", "🏠", "📵", "🧾", "📞"],
+}
