@@ -2,9 +2,11 @@
 
 A simple Streamlit app for senior citizens in Hyderabad: one place for the day's news and plain-language tips on the topics that matter most after 60. It follows the same layout as [finance-faqs](https://github.com/chennab12/finance-faqs): a sidebar menu, one page per topic, previous/next buttons and a small visual memory cue.
 
-Pages: Home, Emergency numbers, Today's news (Hyderabad, Telangana, India and senior-citizen headlines with short summaries), Health, Money, Safety and scams, Government benefits, Getting around Hyderabad, Phone and digital help, Active and happy living, Simple money tools (FD growth, monthly interest income, life certificate dates) and Sources. Text is large by default, with an extra-large option.
+Pages: Home, Emergency numbers, Today's news (Hyderabad, Telangana, India and senior-citizen headlines with short summaries), Health, Money, Safety and scams, Government benefits, Getting around Hyderabad, Phone and digital help, Active and happy living, Simple money tools (FD growth, monthly interest income, life certificate dates) and Sources. Text is large by default, with an extra-large option. **English** and **తెలుగు** buttons at the top switch every page, including the news feeds, to that language.
 
 News comes from Google News RSS feeds, refreshed about every 30 minutes, using only the Python standard library. No API key is needed. Tips are general information, not medical, legal or financial advice; each topic links to the official Indian government or regulator website.
+
+Telugu text lives in `i18n.py`, next to the English text in `content.py`. When you add or change a tip in one, change the other too; a test checks that both have the same topics and the same number of tips.
 
 ## Run locally
 

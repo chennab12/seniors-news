@@ -1,7 +1,8 @@
 import pytest
 
 from calculations import fd_maturity, inr, interest_payout, life_certificate_window
-from content import FEEDS, SOURCES, TOPICS
+from content import FEEDS, HELPLINES, SOURCES, TOPICS
+from i18n import FEEDS_TE, HELPLINES_TE, TOPICS_TE, UI
 from news import parse_feed, summarize
 
 RSS = b"""<rss><channel>
@@ -57,3 +58,15 @@ def test_content_links_and_feeds_exist():
         assert topic["feed"] is None or topic["feed"] in FEEDS
         assert all(name in SOURCES for name in topic["links"])
         assert len(topic["cue"]) == 4
+
+
+def test_telugu_matches_english():
+    assert set(TOPICS_TE) == {t["title"] for t in TOPICS}
+    for topic in TOPICS:
+        te = TOPICS_TE[topic["title"]]
+        assert len(te["tips"]) == len(topic["tips"])
+        assert len(te["cue"]) == 4 and te["do"] and te["dont"] and te["takeaway"]
+    assert len(HELPLINES_TE) == len(HELPLINES)
+    assert set(FEEDS_TE) == set(FEEDS)
+    assert set(UI["te"]) - {"windows"} == set(UI["en"])
+    assert set(UI["te"]["windows"]) == {life_certificate_window(85), life_certificate_window(70)}

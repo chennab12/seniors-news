@@ -9,8 +9,9 @@ from content import TOPICS
 STORY = {"title": "Metro adds lifts at more stations", "summary": "Lifts open this week.", "source": "Test", "link": "https://example.com", "date": None}
 
 
-def run(section=None, stories=(STORY,)):
+def run(section=None, stories=(STORY,), lang="en"):
     at = AppTest.from_file("../app.py", default_timeout=30)
+    at.session_state["lang"] = lang
     if section is not None:
         at.session_state["section"] = section
     with patch("news.fetch_headlines", return_value=list(stories)):
@@ -23,6 +24,22 @@ def test_every_section_renders():
     at = run()
     for section in at.sidebar.radio[0].options:
         run(section)
+
+
+def test_every_section_renders_in_telugu():
+    for section in run().sidebar.radio[0].options:
+        at = run(section, lang="te")
+        assert "తెలుగు" in [b.label for b in at.button]
+
+
+def test_language_buttons_switch_text():
+    at = run(f"{TOPICS[1]['icon']} {TOPICS[1]['title']}")
+    assert at.header[0].value == "🩺 Health"
+    [b for b in at.button if b.label == "తెలుగు"][0].click().run()
+    assert at.session_state["lang"] == "te"
+    assert at.header[0].value == "🩺 ఆరోగ్యం"
+    [b for b in at.button if b.label == "English"][0].click().run()
+    assert at.header[0].value == "🩺 Health"
 
 
 def test_news_failure_shows_friendly_message():
@@ -43,6 +60,6 @@ def test_next_topic_button_advances():
 
 def test_each_tool_renders():
     at = run("🧮 Simple money tools")
-    for option in ["Fixed deposit growth", "Monthly interest income", "Life certificate dates"]:
+    for option in ["fd", "income", "life"]:
         at.button_group[0].set_value(option).run()
         assert not at.exception, at.exception
