@@ -5,19 +5,27 @@ import streamlit as st
 
 import news
 from calculations import fd_maturity, inr, interest_payout, life_certificate_window
-from content import FEEDS, HELPLINES, SOURCES, TOPICS
+import helper_pages
+from content import FEEDS, HELPLINES, SOURCES, TIP_ICONS, TOPICS
 from i18n import FEEDS_TE, HELPLINES_TE, LANGUAGES, TOPICS_TE, UI
-from visuals import large_text, show
+from visuals import large_text, read_aloud, show
 
 st.set_page_config(page_title="Hyderabad Seniors' Corner", page_icon="🌼", layout="wide")
 
 # Section keys stay in English; only their labels are translated.
 HOME = "🏠 Home"
 EMERGENCY = "🚨 Emergency numbers"
+SCAM = "🕵️ Scam checker"
+CARD = "🪪 My emergency card"
+HOSPITALS = "🏥 Hospitals and medicines"
+DATES = "📅 Important dates"
+CHECKUPS = "✅ Check-up schedule"
+ASK = "💬 Ask a question"
 TOOLS = "🧮 Simple money tools"
 ABOUT = "📚 Sources and about"
 TOPIC_NAMES = [f"{t['icon']} {t['title']}" for t in TOPICS]
-SECTIONS = [HOME, EMERGENCY] + TOPIC_NAMES + [TOOLS, ABOUT]
+HELPERS = [SCAM, CARD, HOSPITALS, DATES, CHECKUPS, ASK]
+SECTIONS = [HOME, EMERGENCY] + TOPIC_NAMES + HELPERS + [TOOLS, ABOUT]
 NEWS_CHOICES = ["Hyderabad", "Telangana", "India", "For senior citizens"]
 TOOL_KEYS = ["fd", "income", "life"]
 TEXT_SIZES = {"Large": 19, "Extra large": 23}
@@ -39,8 +47,12 @@ def set_lang(code):
 
 def topic(index):
     """The topic in the chosen language; links and icons are shared."""
-    base = TOPICS[index]
+    base = {**TOPICS[index], "_key": TOPICS[index]["title"]}
     return {**base, **TOPICS_TE[base["title"]]} if lang == "te" else base
+
+
+def topics():
+    return [topic(i) for i in range(len(TOPICS))]
 
 
 def section_label(section):
@@ -95,25 +107,41 @@ def show_news(feed, limit=5):
 def render_home():
     st.header(ui["welcome"])
     st.write(ui["welcome_text"])
+    weather_col, tip_col = st.columns(2)
+    with weather_col:
+        helper_pages.weather_card(ui)
+    with tip_col:
+        helper_pages.tip_card(ui, lang, topics(), TIP_ICONS)
+    st.error(ui["home_emergency"])
+    st.button(ui["see_emergency"], on_click=go_to, args=(EMERGENCY,), type="primary")
+
+    st.subheader(ui["topics_heading"])
     cols = st.columns(2)
     for i, name in enumerate(TOPIC_NAMES):
         with cols[i % 2].container(border=True):
             st.markdown(f"### {section_label(name)}")
             st.write(topic(i)["takeaway"])
-            st.button(ui["open"], key="open_" + name, on_click=go_to, args=(name,), use_container_width=True)
-    st.error(ui["home_emergency"])
-    st.button(ui["see_emergency"], on_click=go_to, args=(EMERGENCY,), type="primary")
+            st.button(f"👉 {ui['open']}", key="open_" + name, on_click=go_to, args=(name,), use_container_width=True)
+
+    st.subheader(ui["helpful_tools"])
+    cols = st.columns(3)
+    for i, name in enumerate(HELPERS):
+        with cols[i % 3].container(border=True):
+            st.markdown(f"#### {section_label(name)}")
+            st.write(ui["tool_desc"][name.split(" ", 1)[1]])
+            st.button(f"👉 {ui['open']}", key="open_" + name, on_click=go_to, args=(name,), use_container_width=True)
 
 
 def render_emergency():
     st.header(ui["emergency_header"])
     st.write(ui["emergency_text"])
     names = HELPLINES_TE if lang == "te" else [name for name, _ in HELPLINES]
-    for name, (_, number) in zip(names, HELPLINES):
+    icons = ["🆘", "🚑", "👮", "🚒", "💻", "👵", "👩"]
+    for icon, name, (_, number) in zip(icons, names, HELPLINES):
         with st.container(border=True):
-            left, right = st.columns([3, 1])
-            left.markdown(f"### {name}")
-            right.markdown(f"## [{number}](tel:{number})")
+            left, right = st.columns([3, 1], vertical_alignment="center")
+            left.markdown(f"### {icon} {name}")
+            right.markdown(f"## [📞 {number}](tel:{number})")
     st.info(ui["emergency_tip"])
     st.markdown(f"[{ui['elder_line_link']}]({SOURCES['Elder Line 14567']}) · [{ui['cyber_link']}]({SOURCES['Cyber crime portal']})")
 
@@ -122,6 +150,8 @@ def render_topic(index):
     t = topic(index)
     st.header(f"{t['icon']} {t['title']}")
     st.info(t["takeaway"])
+    spoken = " ".join([t["title"] + ".", t["takeaway"]] + t["tips"] + [f"{ui['do']}: {t['do']}", f"{ui['dont']}: {t['dont']}"])
+    read_aloud(spoken, lang, (ui["read_aloud"], ui["stop"]))
 
     if index == 0:
         feed = st.segmented_control(ui["show_news_for"], NEWS_CHOICES, default=NEWS_CHOICES[0], format_func=ui["news_choices"].get)
@@ -131,11 +161,11 @@ def render_topic(index):
         show_news(t["feed"])
 
     st.subheader(ui["simple_tips"])
-    for tip in t["tips"]:
-        st.markdown(f"- {tip}")
+    for icon, tip in zip(TIP_ICONS[t["_key"]], t["tips"]):
+        st.markdown(f"- {icon} {tip}")
     do_col, dont_col = st.columns(2)
-    do_col.success(f"**{ui['do']}:** {t['do']}")
-    dont_col.error(f"**{ui['dont']}:** {t['dont']}")
+    do_col.success(f"✅ **{ui['do']}:** {t['do']}")
+    dont_col.error(f"❌ **{ui['dont']}:** {t['dont']}")
 
     st.subheader(ui["official_sites"])
     st.markdown(" · ".join(f"[{name} ↗]({SOURCES[name]})" for name in t["links"]))
@@ -147,7 +177,7 @@ def render_topic(index):
     if index + 1 < len(TOPICS):
         next_col.button(ui["next_topic"], on_click=go_to, args=(TOPIC_NAMES[index + 1],), type="primary", use_container_width=True)
     else:
-        next_col.button(ui["try_tools"], on_click=go_to, args=(TOOLS,), type="primary", use_container_width=True)
+        next_col.button(ui["try_scam"], on_click=go_to, args=(SCAM,), type="primary", use_container_width=True)
 
 
 def render_tools():
@@ -198,6 +228,18 @@ elif section == EMERGENCY:
     render_emergency()
 elif section in TOPIC_NAMES:
     render_topic(TOPIC_NAMES.index(section))
+elif section == SCAM:
+    helper_pages.render_scam(ui, lang)
+elif section == CARD:
+    helper_pages.render_card(ui, lang)
+elif section == HOSPITALS:
+    helper_pages.render_hospitals(ui, lang)
+elif section == DATES:
+    helper_pages.render_dates(ui, lang)
+elif section == CHECKUPS:
+    helper_pages.render_checkups(ui, lang)
+elif section == ASK:
+    helper_pages.render_ask(ui, lang, topics(), TIP_ICONS)
 elif section == TOOLS:
     render_tools()
 else:
